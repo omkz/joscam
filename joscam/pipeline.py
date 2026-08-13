@@ -1,8 +1,12 @@
 from joscam.effects.basic import (
     brightness,
     contrast,
+    exposure,
     gamma,
+    highlights_shadows,
     saturation,
+    temperature,
+    tint,
 )
 from joscam.settings import CameraSettings
 
@@ -12,6 +16,17 @@ class EffectPipeline:
         self.settings = settings
 
     def process(self, frame):
+        frame = exposure(
+            frame,
+            self.settings.exposure,
+        )
+
+        frame = highlights_shadows(
+            frame,
+            self.settings.highlights,
+            self.settings.shadows,
+        )
+
         frame = brightness(
             frame,
             self.settings.brightness,
@@ -20,6 +35,16 @@ class EffectPipeline:
         frame = contrast(
             frame,
             self.settings.contrast,
+        )
+
+        frame = temperature(
+            frame,
+            self.settings.temperature,
+        )
+
+        frame = tint(
+            frame,
+            self.settings.tint,
         )
 
         frame = saturation(

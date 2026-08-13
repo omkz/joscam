@@ -38,3 +38,93 @@ def gamma(frame, value: float):
     ]).astype(np.uint8)
 
     return cv2.LUT(frame, table)
+
+def exposure(frame, value: float):
+    img = frame.astype(np.float32)
+    img *= 2.0 ** value
+
+    return np.clip(
+        img,
+        0,
+        255,
+    ).astype(np.uint8)
+
+
+def temperature(frame, value: float):
+    if value == 0:
+        return frame
+
+    img = frame.astype(np.float32)
+
+    # BGR
+    img[:, :, 2] *= 1.0 + value
+    img[:, :, 0] *= 1.0 - value
+
+    return np.clip(
+        img,
+        0,
+        255,
+    ).astype(np.uint8)
+
+
+def tint(frame, value: float):
+    if value == 0:
+        return frame
+
+    img = frame.astype(np.float32)
+
+    # + = magenta
+    # - = green
+    img[:, :, 1] *= 1.0 - value
+    img[:, :, 0] *= 1.0 + value * 0.35
+    img[:, :, 2] *= 1.0 + value * 0.35
+
+    return np.clip(
+        img,
+        0,
+        255,
+    ).astype(np.uint8)
+
+
+def highlights_shadows(
+    frame,
+    highlights: float,
+    shadows: float,
+):
+    img = frame.astype(np.float32) / 255.0
+
+    luminance = (
+        img[:, :, 0] * 0.114
+        + img[:, :, 1] * 0.587
+        + img[:, :, 2] * 0.299
+    )
+
+    shadow_mask = np.clip(
+        (0.5 - luminance) * 2,
+        0,
+        1,
+    )
+
+    highlight_mask = np.clip(
+        (luminance - 0.5) * 2,
+        0,
+        1,
+    )
+
+    img += (
+        shadows
+        * shadow_mask[:, :, None]
+        * 0.30
+    )
+
+    img += (
+        highlights
+        * highlight_mask[:, :, None]
+        * 0.30
+    )
+
+    return np.clip(
+        img * 255,
+        0,
+        255,
+    ).astype(np.uint8)

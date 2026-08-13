@@ -105,6 +105,56 @@ class MainWindow(QMainWindow):
             )
         )
 
+        layout.addWidget(
+            self.create_slider(
+                key="exposure",
+                label="Exposure",
+                minimum=-100,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="highlights",
+                label="Highlights",
+                minimum=-100,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="shadows",
+                label="Shadows",
+                minimum=-100,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="temperature",
+                label="Temperature",
+                minimum=-30,
+                maximum=30,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="tint",
+                label="Tint",
+                minimum=-30,
+                maximum=30,
+                scale=100,
+            )
+        )
+
         container = QWidget()
         container.setLayout(layout)
 
