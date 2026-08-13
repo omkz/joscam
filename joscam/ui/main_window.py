@@ -1,9 +1,11 @@
+import logging
+
 import cv2
 import pyvirtualcam
 
 from dataclasses import asdict
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QThread
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
@@ -22,6 +24,10 @@ from joscam.filters import CATEGORIES
 from joscam.pipeline import EffectPipeline
 from joscam.presets import PRESETS
 from joscam.settings import CameraSettings
+from joscam.ui.worker import CameraWorker
+
+
+logger = logging.getLogger(__name__)
 
 
 WIDTH = 1280
@@ -36,7 +42,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Joscam")
         self.resize(1000, 800)
 
-        self.camera = Camera()
+        self.camera = Camera(
+            width=WIDTH,
+            height=HEIGHT,
+            fps=FPS,
+        )
 
         self.settings = CameraSettings()
         self.pipeline = EffectPipeline(self.settings)
@@ -79,9 +89,23 @@ class MainWindow(QMainWindow):
         # Default state
         self.apply_preset("Neutral")
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(1000 // FPS)
+        # Capture, processing, and virtual camera output all run on a
+        # worker thread so the GUI thread stays responsive.
+        self.worker_thread = QThread(self)
+        self.worker = CameraWorker(
+            self.camera,
+            self.pipeline,
+            self.virtual_camera,
+            WIDTH,
+            HEIGHT,
+        )
+        self.worker.moveToThread(self.worker_thread)
+
+        self.worker_thread.started.connect(self.worker.run)
+        self.worker.preview_ready.connect(self.on_preview_ready)
+        self.worker.error.connect(self.on_worker_error)
+
+        self.worker_thread.start()
 
     def create_preset_controls(self):
         layout = QHBoxLayout()
@@ -495,25 +519,16 @@ class MainWindow(QMainWindow):
             "Neutral"
         )
 
-    def update_frame(self):
-        frame = self.camera.read()
+    def on_preview_ready(self):
+        frame = self.worker.latest_preview_frame()
 
-        frame = cv2.resize(
-            frame,
-            (WIDTH, HEIGHT),
-        )
+        if frame is None:
+            return
 
-        frame = self.pipeline.process(
-            frame
-        )
+        self.show_preview(frame)
 
-        self.virtual_camera.send(
-            frame
-        )
-
-        self.show_preview(
-            frame
-        )
+    def on_worker_error(self, message):
+        logger.error("Camera worker error: %s", message)
 
     def show_preview(self, frame):
         rgb = cv2.cvtColor(
@@ -546,7 +561,9 @@ class MainWindow(QMainWindow):
         )
 
     def closeEvent(self, event):
-        self.timer.stop()
+        self.worker.stop()
+        self.worker_thread.quit()
+        self.worker_thread.wait()
 
         self.camera.close()
         self.virtual_camera.close()
