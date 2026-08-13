@@ -1,11 +1,16 @@
 import cv2
 import pyvirtualcam
 
+from dataclasses import asdict
+
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
     QLabel,
     QMainWindow,
+    QPushButton,
     QSlider,
     QVBoxLayout,
     QWidget,
@@ -13,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from joscam.camera import Camera
 from joscam.pipeline import EffectPipeline
+from joscam.presets import PRESETS
 from joscam.settings import CameraSettings
 
 
@@ -33,6 +39,9 @@ class MainWindow(QMainWindow):
         self.settings = CameraSettings()
         self.pipeline = EffectPipeline(self.settings)
 
+        self.sliders = {}
+        self.slider_scales = {}
+
         self.virtual_camera = pyvirtualcam.Camera(
             width=WIDTH,
             height=HEIGHT,
@@ -41,66 +50,58 @@ class MainWindow(QMainWindow):
         )
 
         self.preview = QLabel()
-        self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview.setAlignment(
+            Qt.AlignmentFlag.AlignCenter
+        )
         self.preview.setMinimumSize(640, 360)
 
         layout = QVBoxLayout()
 
         layout.addWidget(self.preview)
 
+        # Presets
+        layout.addLayout(
+            self.create_preset_controls()
+        )
+
+        # Sliders
         layout.addWidget(
             self.create_slider(
-                "Brightness",
-                -100,
-                100,
-                0,
-                lambda value: setattr(
-                    self.settings,
-                    "brightness",
-                    float(value),
-                ),
+                key="brightness",
+                label="Brightness",
+                minimum=-100,
+                maximum=100,
+                scale=1,
             )
         )
 
         layout.addWidget(
             self.create_slider(
-                "Contrast",
-                50,
-                200,
-                100,
-                lambda value: setattr(
-                    self.settings,
-                    "contrast",
-                    value / 100,
-                ),
+                key="contrast",
+                label="Contrast",
+                minimum=50,
+                maximum=200,
+                scale=100,
             )
         )
 
         layout.addWidget(
             self.create_slider(
-                "Saturation",
-                0,
-                200,
-                100,
-                lambda value: setattr(
-                    self.settings,
-                    "saturation",
-                    value / 100,
-                ),
+                key="saturation",
+                label="Saturation",
+                minimum=0,
+                maximum=200,
+                scale=100,
             )
         )
 
         layout.addWidget(
             self.create_slider(
-                "Gamma",
-                50,
-                150,
-                100,
-                lambda value: setattr(
-                    self.settings,
-                    "gamma",
-                    value / 100,
-                ),
+                key="gamma",
+                label="Gamma",
+                minimum=50,
+                maximum=150,
+                scale=100,
             )
         )
 
@@ -109,49 +110,135 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(container)
 
+        # Default state
+        self.apply_preset("Neutral")
+
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(1000 // FPS)
 
+    def create_preset_controls(self):
+        layout = QHBoxLayout()
+
+        label = QLabel("Preset")
+
+        self.preset_combo = QComboBox()
+        self.preset_combo.addItems(
+            PRESETS.keys()
+        )
+
+        self.preset_combo.currentTextChanged.connect(
+            self.apply_preset
+        )
+
+        reset_button = QPushButton("Reset")
+        reset_button.clicked.connect(
+            self.reset_settings
+        )
+
+        layout.addWidget(label)
+        layout.addWidget(self.preset_combo)
+        layout.addWidget(reset_button)
+
+        return layout
+
     def create_slider(
         self,
-        name,
+        key,
+        label,
         minimum,
         maximum,
-        default,
-        callback,
+        scale,
     ):
         container = QWidget()
         layout = QVBoxLayout(container)
 
-        label = QLabel()
+        value_label = QLabel()
 
-        slider = QSlider(Qt.Orientation.Horizontal)
+        slider = QSlider(
+            Qt.Orientation.Horizontal
+        )
 
         slider.setMinimum(minimum)
         slider.setMaximum(maximum)
-        slider.setValue(default)
 
-        def value_changed(value):
-            callback(value)
+        self.sliders[key] = slider
+        self.slider_scales[key] = scale
 
-            if name == "Brightness":
-                display_value = str(value)
-            else:
-                display_value = f"{value / 100:.2f}"
+        def value_changed(raw_value):
+            value = raw_value / scale
 
-            label.setText(
-                f"{name}: {display_value}"
+            setattr(
+                self.settings,
+                key,
+                value,
             )
 
-        slider.valueChanged.connect(value_changed)
+            if scale == 1:
+                display = f"{value:.0f}"
+            else:
+                display = f"{value:.2f}"
 
-        value_changed(default)
+            value_label.setText(
+                f"{label}: {display}"
+            )
 
-        layout.addWidget(label)
+        slider.valueChanged.connect(
+            value_changed
+        )
+
+        default_value = getattr(
+            self.settings,
+            key,
+        )
+
+        slider.setValue(
+            round(default_value * scale)
+        )
+
+        value_changed(
+            slider.value()
+        )
+
+        layout.addWidget(value_label)
         layout.addWidget(slider)
 
         return container
+
+    def apply_preset(self, name):
+        if name not in PRESETS:
+            return
+
+        preset = PRESETS[name]
+
+        for key, value in asdict(preset).items():
+            setattr(
+                self.settings,
+                key,
+                value,
+            )
+
+            slider = self.sliders.get(key)
+
+            if slider is None:
+                continue
+
+            scale = self.slider_scales[key]
+
+            slider.setValue(
+                round(value * scale)
+            )
+
+    def reset_settings(self):
+        self.preset_combo.setCurrentText(
+            "Neutral"
+        )
+
+        # Tetap apply walaupun combo
+        # sudah berada di Neutral.
+        self.apply_preset(
+            "Neutral"
+        )
 
     def update_frame(self):
         frame = self.camera.read()
@@ -161,11 +248,17 @@ class MainWindow(QMainWindow):
             (WIDTH, HEIGHT),
         )
 
-        frame = self.pipeline.process(frame)
+        frame = self.pipeline.process(
+            frame
+        )
 
-        self.virtual_camera.send(frame)
+        self.virtual_camera.send(
+            frame
+        )
 
-        self.show_preview(frame)
+        self.show_preview(
+            frame
+        )
 
     def show_preview(self, frame):
         rgb = cv2.cvtColor(
@@ -183,7 +276,9 @@ class MainWindow(QMainWindow):
             QImage.Format.Format_RGB888,
         )
 
-        pixmap = QPixmap.fromImage(image)
+        pixmap = QPixmap.fromImage(
+            image
+        )
 
         pixmap = pixmap.scaled(
             self.preview.size(),
@@ -191,7 +286,9 @@ class MainWindow(QMainWindow):
             Qt.TransformationMode.SmoothTransformation,
         )
 
-        self.preview.setPixmap(pixmap)
+        self.preview.setPixmap(
+            pixmap
+        )
 
     def closeEvent(self, event):
         self.timer.stop()
