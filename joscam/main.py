@@ -2,12 +2,8 @@ import cv2
 import pyvirtualcam
 
 from joscam.camera import Camera
-from joscam.effects.basic import (
-    brightness,
-    contrast,
-    gamma,
-    saturation,
-)
+from joscam.pipeline import EffectPipeline
+from joscam.settings import CameraSettings
 
 
 WIDTH = 1280
@@ -18,6 +14,15 @@ FPS = 30
 def main():
     camera = Camera()
 
+    settings = CameraSettings(
+        brightness=5,
+        contrast=1.08,
+        saturation=0.95,
+        gamma=1.03,
+    )
+
+    pipeline = EffectPipeline(settings)
+
     try:
         with pyvirtualcam.Camera(
             width=WIDTH,
@@ -25,8 +30,9 @@ def main():
             fps=FPS,
             fmt=pyvirtualcam.PixelFormat.BGR,
         ) as virtual_camera:
-
-            print(f"Virtual camera: {virtual_camera.device}")
+            print(
+                f"Virtual camera: {virtual_camera.device}"
+            )
 
             while True:
                 frame = camera.read()
@@ -36,10 +42,7 @@ def main():
                     (WIDTH, HEIGHT),
                 )
 
-                frame = brightness(frame, 5)
-                frame = contrast(frame, 1.08)
-                frame = saturation(frame, 0.95)
-                frame = gamma(frame, 1.03)
+                frame = pipeline.process(frame)
 
                 virtual_camera.send(frame)
                 virtual_camera.sleep_until_next_frame()
