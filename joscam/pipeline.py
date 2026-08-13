@@ -4,13 +4,16 @@ from joscam.effects.basic import (
     clarity,
     contrast,
     exposure,
+    fade,
     gamma,
+    grain,
     highlights_shadows,
     saturation,
     sharpness,
     skin_smoothing,
     temperature,
     tint,
+    vignette,
 )
 from joscam.settings import CameraSettings
 
@@ -79,6 +82,21 @@ class EffectPipeline:
         frame = sharpness(
             frame,
             self.settings.sharpness,
+        )
+
+        frame = fade(
+            frame,
+            self.settings.fade,
+        )
+
+        frame = vignette(
+            frame,
+            self.settings.vignette,
+        )
+
+        frame = grain(
+            frame,
+            self.settings.grain,
         )
 
         return frame

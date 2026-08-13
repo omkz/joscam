@@ -18,3 +18,7 @@ class CameraSettings:
     skin_smoothing: float = 0.0
     clarity: float = 0.0
     sharpness: float = 0.0
+
+    fade: float = 0.0
+    vignette: float = 0.0
+    grain: float = 0.0

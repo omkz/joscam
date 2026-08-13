@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 import cv2
 import numpy as np
 
@@ -199,3 +201,79 @@ def sharpness(frame, value: float):
         -value,
         0,
     )
+
+
+def fade(frame, value: float):
+    if value <= 0:
+        return frame
+
+    img = frame.astype(np.float32)
+
+    lift = 40.0 * value
+    gain = 1.0 - 0.3 * value
+
+    img = img * gain + lift
+
+    return np.clip(
+        img,
+        0,
+        255,
+    ).astype(np.uint8)
+
+
+@lru_cache(maxsize=4)
+def _vignette_mask(height, width):
+    y, x = np.indices(
+        (height, width),
+        dtype=np.float32,
+    )
+
+    center_y = (height - 1) / 2.0
+    center_x = (width - 1) / 2.0
+
+    ny = (y - center_y) / center_y
+    nx = (x - center_x) / center_x
+
+    distance_sq = nx ** 2 + ny ** 2
+
+    return np.exp(-distance_sq / 1.2)
+
+
+def vignette(frame, value: float):
+    if value <= 0:
+        return frame
+
+    height, width = frame.shape[:2]
+
+    mask = _vignette_mask(height, width)
+
+    strength = mask * value + (1 - value)
+
+    img = frame.astype(np.float32) * strength[:, :, None]
+
+    return np.clip(
+        img,
+        0,
+        255,
+    ).astype(np.uint8)
+
+
+def grain(frame, value: float):
+    if value <= 0:
+        return frame
+
+    height, width = frame.shape[:2]
+
+    noise = np.random.normal(
+        loc=0.0,
+        scale=value * 200.0,
+        size=(height, width),
+    ).astype(np.float32)
+
+    img = frame.astype(np.float32) + noise[:, :, None]
+
+    return np.clip(
+        img,
+        0,
+        255,
+    ).astype(np.uint8)

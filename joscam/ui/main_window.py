@@ -122,6 +122,9 @@ class MainWindow(QMainWindow):
         tabs.addTab(
             self.create_detail_tab(), "Detail"
         )
+        tabs.addTab(
+            self.create_film_tab(), "Film"
+        )
 
         return tabs
 
@@ -273,6 +276,42 @@ class MainWindow(QMainWindow):
                 label="Sharpness",
                 minimum=0,
                 maximum=50,
+                scale=100,
+            )
+        )
+
+        return container
+
+    def create_film_tab(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+
+        layout.addWidget(
+            self.create_slider(
+                key="fade",
+                label="Fade",
+                minimum=0,
+                maximum=50,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="vignette",
+                label="Vignette",
+                minimum=0,
+                maximum=70,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="grain",
+                label="Film Grain",
+                minimum=0,
+                maximum=10,
                 scale=100,
             )
         )
