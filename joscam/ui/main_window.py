@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QVBoxLayout,
     QWidget,
+    QTabWidget,
 )
 
 from joscam.camera import Camera
@@ -57,102 +58,16 @@ class MainWindow(QMainWindow):
 
         layout = QVBoxLayout()
 
-        layout.addWidget(self.preview)
+        layout.addWidget(self.preview, stretch=1)
 
         # Presets
         layout.addLayout(
             self.create_preset_controls()
         )
 
-        # Sliders
+        # Tabs
         layout.addWidget(
-            self.create_slider(
-                key="brightness",
-                label="Brightness",
-                minimum=-100,
-                maximum=100,
-                scale=1,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="contrast",
-                label="Contrast",
-                minimum=50,
-                maximum=200,
-                scale=100,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="saturation",
-                label="Saturation",
-                minimum=0,
-                maximum=200,
-                scale=100,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="gamma",
-                label="Gamma",
-                minimum=50,
-                maximum=150,
-                scale=100,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="exposure",
-                label="Exposure",
-                minimum=-100,
-                maximum=100,
-                scale=100,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="highlights",
-                label="Highlights",
-                minimum=-100,
-                maximum=100,
-                scale=100,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="shadows",
-                label="Shadows",
-                minimum=-100,
-                maximum=100,
-                scale=100,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="temperature",
-                label="Temperature",
-                minimum=-30,
-                maximum=30,
-                scale=100,
-            )
-        )
-
-        layout.addWidget(
-            self.create_slider(
-                key="tint",
-                label="Tint",
-                minimum=-30,
-                maximum=30,
-                scale=100,
-            )
+            self.create_control_tabs()
         )
 
         container = QWidget()
@@ -191,6 +106,129 @@ class MainWindow(QMainWindow):
         layout.addWidget(reset_button)
 
         return layout
+
+    def create_control_tabs(self):
+        tabs = QTabWidget()
+
+        tabs.addTab(
+            self.create_basic_tab(), "Basic"
+        )
+        tabs.addTab(
+            self.create_light_tab(), "Light"
+        )
+        tabs.addTab(
+            self.create_color_tab(), "Color"
+        )
+
+        return tabs
+
+    def create_basic_tab(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+
+        layout.addWidget(
+            self.create_slider(
+                key="brightness",
+                label="Brightness",
+                minimum=-100,
+                maximum=100,
+                scale=1,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="contrast",
+                label="Contrast",
+                minimum=50,
+                maximum=200,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="gamma",
+                label="Gamma",
+                minimum=50,
+                maximum=150,
+                scale=100,
+            )
+        )
+
+        return container
+
+    def create_light_tab(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+
+        layout.addWidget(
+            self.create_slider(
+                key="exposure",
+                label="Exposure",
+                minimum=-100,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="highlights",
+                label="Highlights",
+                minimum=-100,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="shadows",
+                label="Shadows",
+                minimum=-100,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        return container
+
+    def create_color_tab(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+
+        layout.addWidget(
+            self.create_slider(
+                key="saturation",
+                label="Saturation",
+                minimum=0,
+                maximum=200,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="temperature",
+                label="Temperature",
+                minimum=-30,
+                maximum=30,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="tint",
+                label="Tint",
+                minimum=-30,
+                maximum=30,
+                scale=100,
+            )
+        )
+
+        return container
 
     def create_slider(
         self,
