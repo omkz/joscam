@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from joscam.camera import Camera
+from joscam.filters import CATEGORIES
 from joscam.pipeline import EffectPipeline
 from joscam.presets import PRESETS
 from joscam.settings import CameraSettings
@@ -121,6 +122,9 @@ class MainWindow(QMainWindow):
         )
         tabs.addTab(
             self.create_detail_tab(), "Detail"
+        )
+        tabs.addTab(
+            self.create_filter_tab(), "Filter"
         )
         tabs.addTab(
             self.create_film_tab(), "Film"
@@ -282,6 +286,72 @@ class MainWindow(QMainWindow):
 
         return container
 
+    def create_filter_tab(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+
+        category_row = QHBoxLayout()
+        category_row.addWidget(QLabel("Category"))
+
+        self.category_combo = QComboBox()
+        self.category_combo.addItems(CATEGORIES.keys())
+        self.category_combo.currentTextChanged.connect(
+            self.populate_filters
+        )
+        category_row.addWidget(self.category_combo)
+
+        layout.addLayout(category_row)
+
+        filter_row = QHBoxLayout()
+        filter_row.addWidget(QLabel("Filter"))
+
+        self.filter_combo = QComboBox()
+        self.filter_combo.currentTextChanged.connect(
+            self.select_filter
+        )
+        filter_row.addWidget(self.filter_combo)
+
+        layout.addLayout(filter_row)
+
+        self.populate_filters(
+            self.category_combo.currentText()
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="filter_intensity",
+                label="Intensity",
+                minimum=0,
+                maximum=100,
+                scale=100,
+                on_change=self.set_filter_intensity,
+                initial=self.pipeline.filter_intensity,
+            )
+        )
+
+        return container
+
+    def populate_filters(self, category):
+        self.filter_combo.blockSignals(True)
+
+        self.filter_combo.clear()
+        self.filter_combo.addItems(
+            ["None"] + CATEGORIES[category]
+        )
+        self.filter_combo.setCurrentText("None")
+
+        self.filter_combo.blockSignals(False)
+
+        self.select_filter(
+            self.filter_combo.currentText()
+        )
+
+    def select_filter(self, name):
+        self.pipeline.filter_name = name
+
+    def set_filter_intensity(self, value):
+        self.pipeline.filter_intensity = value
+
     def create_film_tab(self):
         container = QWidget()
         layout = QVBoxLayout(container)
@@ -325,6 +395,8 @@ class MainWindow(QMainWindow):
         minimum,
         maximum,
         scale,
+        on_change=None,
+        initial=None,
     ):
         container = QWidget()
         layout = QVBoxLayout(container)
@@ -338,17 +410,21 @@ class MainWindow(QMainWindow):
         slider.setMinimum(minimum)
         slider.setMaximum(maximum)
 
-        self.sliders[key] = slider
-        self.slider_scales[key] = scale
+        if on_change is None:
+            self.sliders[key] = slider
+            self.slider_scales[key] = scale
 
         def value_changed(raw_value):
             value = raw_value / scale
 
-            setattr(
-                self.settings,
-                key,
-                value,
-            )
+            if on_change is not None:
+                on_change(value)
+            else:
+                setattr(
+                    self.settings,
+                    key,
+                    value,
+                )
 
             if scale == 1:
                 display = f"{value:.0f}"
@@ -363,10 +439,13 @@ class MainWindow(QMainWindow):
             value_changed
         )
 
-        default_value = getattr(
-            self.settings,
-            key,
-        )
+        if initial is not None:
+            default_value = initial
+        else:
+            default_value = getattr(
+                self.settings,
+                key,
+            )
 
         slider.setValue(
             round(default_value * scale)

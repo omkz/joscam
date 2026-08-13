@@ -15,12 +15,18 @@ from joscam.effects.basic import (
     tint,
     vignette,
 )
+from joscam.filters import apply_filter
 from joscam.settings import CameraSettings
 
 
 class EffectPipeline:
     def __init__(self, settings: CameraSettings):
         self.settings = settings
+
+        # Filter/look layer. Kept separate from CameraSettings:
+        # it is a look applied on top of a preset, not part of it.
+        self.filter_name = "None"
+        self.filter_intensity = 1.0
 
     def process(self, frame):
         frame = exposure(
@@ -82,6 +88,12 @@ class EffectPipeline:
         frame = sharpness(
             frame,
             self.settings.sharpness,
+        )
+
+        frame = apply_filter(
+            frame,
+            self.filter_name,
+            self.filter_intensity,
         )
 
         frame = fade(
