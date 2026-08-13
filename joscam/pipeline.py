@@ -16,6 +16,7 @@ from joscam.effects.basic import (
     vignette,
 )
 from joscam.filters import apply_filter
+from joscam.frames import FrameSettings, render_frame
 from joscam.settings import CameraSettings
 
 
@@ -27,6 +28,11 @@ class EffectPipeline:
         # it is a look applied on top of a preset, not part of it.
         self.filter_name = "None"
         self.filter_intensity = 1.0
+
+        # Frame/mask layer. Also kept separate from CameraSettings and
+        # from the filter layer -- it is a compositing step, not a
+        # per-pixel grade.
+        self.frame_settings = FrameSettings()
 
     def process(self, frame):
         frame = exposure(
@@ -109,6 +115,11 @@ class EffectPipeline:
         frame = grain(
             frame,
             self.settings.grain,
+        )
+
+        frame = render_frame(
+            frame,
+            self.frame_settings,
         )
 
         return frame

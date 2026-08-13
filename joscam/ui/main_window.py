@@ -6,8 +6,9 @@ import pyvirtualcam
 from dataclasses import asdict
 
 from PySide6.QtCore import Qt, QThread
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QColor, QImage, QPixmap
 from PySide6.QtWidgets import (
+    QColorDialog,
     QComboBox,
     QHBoxLayout,
     QLabel,
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from joscam.camera import Camera
 from joscam.filters import CATEGORIES
+from joscam.frames import SHAPES, STYLE_NAMES
 from joscam.pipeline import EffectPipeline
 from joscam.presets import PRESETS
 from joscam.settings import CameraSettings
@@ -152,6 +154,9 @@ class MainWindow(QMainWindow):
         )
         tabs.addTab(
             self.create_film_tab(), "Film"
+        )
+        tabs.addTab(
+            self.create_frame_tab(), "Frame"
         )
 
         return tabs
@@ -411,6 +416,197 @@ class MainWindow(QMainWindow):
         )
 
         return container
+
+    def create_frame_tab(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+
+        frame_settings = self.pipeline.frame_settings
+
+        style_row = QHBoxLayout()
+        style_row.addWidget(QLabel("Frame Style"))
+
+        self.frame_style_combo = QComboBox()
+        self.frame_style_combo.addItems(STYLE_NAMES)
+        self.frame_style_combo.setCurrentText(frame_settings.style)
+        self.frame_style_combo.currentTextChanged.connect(
+            self.set_frame_style
+        )
+        style_row.addWidget(self.frame_style_combo)
+
+        layout.addLayout(style_row)
+
+        shape_row = QHBoxLayout()
+        shape_row.addWidget(QLabel("Shape"))
+
+        self.frame_shape_combo = QComboBox()
+        self.frame_shape_combo.addItems(SHAPES)
+        self.frame_shape_combo.setCurrentText(frame_settings.shape)
+        self.frame_shape_combo.currentTextChanged.connect(
+            self.set_frame_shape
+        )
+        shape_row.addWidget(self.frame_shape_combo)
+
+        layout.addLayout(shape_row)
+
+        layout.addWidget(
+            self.create_slider(
+                key="frame_size",
+                label="Size",
+                minimum=10,
+                maximum=100,
+                scale=100,
+                on_change=self.set_frame_size,
+                initial=frame_settings.size,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="frame_feather",
+                label="Feather",
+                minimum=0,
+                maximum=100,
+                scale=1,
+                on_change=self.set_frame_feather,
+                initial=frame_settings.feather,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="frame_border_width",
+                label="Border Width",
+                minimum=0,
+                maximum=40,
+                scale=1,
+                on_change=self.set_frame_border_width,
+                initial=frame_settings.border_width,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="frame_position_x",
+                label="Position X",
+                minimum=-50,
+                maximum=50,
+                scale=100,
+                on_change=self.set_frame_position_x,
+                initial=frame_settings.position_x,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="frame_position_y",
+                label="Position Y",
+                minimum=-50,
+                maximum=50,
+                scale=100,
+                on_change=self.set_frame_position_y,
+                initial=frame_settings.position_y,
+            )
+        )
+
+        custom_row = QHBoxLayout()
+
+        self.outside_color_button = QPushButton("Outside Color")
+        self.outside_color_button.clicked.connect(
+            self.pick_outside_color
+        )
+        self._set_color_button_swatch(
+            self.outside_color_button,
+            frame_settings.outside_color,
+        )
+        custom_row.addWidget(self.outside_color_button)
+
+        self.border_color_button = QPushButton("Border Color")
+        self.border_color_button.clicked.connect(
+            self.pick_border_color
+        )
+        self._set_color_button_swatch(
+            self.border_color_button,
+            frame_settings.border_color,
+        )
+        custom_row.addWidget(self.border_color_button)
+
+        layout.addLayout(custom_row)
+
+        return container
+
+    def set_frame_style(self, style):
+        self.pipeline.frame_settings.style = style
+
+    def set_frame_shape(self, shape):
+        self.pipeline.frame_settings.shape = shape
+
+    def set_frame_size(self, value):
+        self.pipeline.frame_settings.size = value
+
+    def set_frame_feather(self, value):
+        self.pipeline.frame_settings.feather = value
+
+    def set_frame_border_width(self, value):
+        self.pipeline.frame_settings.border_width = value
+
+    def set_frame_position_x(self, value):
+        self.pipeline.frame_settings.position_x = value
+
+    def set_frame_position_y(self, value):
+        self.pipeline.frame_settings.position_y = value
+
+    def pick_outside_color(self):
+        frame_settings = self.pipeline.frame_settings
+
+        color = QColorDialog.getColor(
+            self._bgr_to_qcolor(frame_settings.outside_color),
+            self,
+            "Outside Color",
+        )
+
+        if not color.isValid():
+            return
+
+        frame_settings.outside_color = self._qcolor_to_bgr(color)
+        self._set_color_button_swatch(
+            self.outside_color_button,
+            frame_settings.outside_color,
+        )
+
+    def pick_border_color(self):
+        frame_settings = self.pipeline.frame_settings
+
+        color = QColorDialog.getColor(
+            self._bgr_to_qcolor(frame_settings.border_color),
+            self,
+            "Border Color",
+        )
+
+        if not color.isValid():
+            return
+
+        frame_settings.border_color = self._qcolor_to_bgr(color)
+        self._set_color_button_swatch(
+            self.border_color_button,
+            frame_settings.border_color,
+        )
+
+    @staticmethod
+    def _bgr_to_qcolor(bgr):
+        b, g, r = bgr
+        return QColor(r, g, b)
+
+    @staticmethod
+    def _qcolor_to_bgr(color):
+        return (color.blue(), color.green(), color.red())
+
+    @staticmethod
+    def _set_color_button_swatch(button, bgr):
+        b, g, r = bgr
+        button.setStyleSheet(
+            f"background-color: rgb({r}, {g}, {b});"
+        )
 
     def create_slider(
         self,
