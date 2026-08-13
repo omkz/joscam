@@ -143,4 +143,23 @@ PRESETS = {
         vignette=0.08,
         grain=0.00,
     ),
+
+    "Youth": CameraSettings(
+        brightness=4,
+        exposure=0.10,
+        contrast=0.95,
+        saturation=1.03,
+        gamma=1.05,
+        highlights=-0.15,
+        shadows=0.15,
+        temperature=0.03,
+        tint=0.01,
+        skin_smoothing=0.35,
+        blur=0.02,
+        clarity=-0.08,
+        sharpness=0.04,
+        fade=0.02,
+        vignette=0.00,
+        grain=0.00,
+    ),
 }
