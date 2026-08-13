@@ -2,6 +2,12 @@ import cv2
 import pyvirtualcam
 
 from joscam.camera import Camera
+from joscam.effects.basic import (
+    brightness,
+    contrast,
+    gamma,
+    saturation,
+)
 
 
 WIDTH = 1280
@@ -29,6 +35,11 @@ def main():
                     frame,
                     (WIDTH, HEIGHT),
                 )
+
+                frame = brightness(frame, 5)
+                frame = contrast(frame, 1.08)
+                frame = saturation(frame, 0.95)
+                frame = gamma(frame, 1.03)
 
                 virtual_camera.send(frame)
                 virtual_camera.sleep_until_next_frame()
