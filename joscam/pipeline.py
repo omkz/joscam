@@ -1,10 +1,14 @@
 from joscam.effects.basic import (
+    blur,
     brightness,
+    clarity,
     contrast,
     exposure,
     gamma,
     highlights_shadows,
     saturation,
+    sharpness,
+    skin_smoothing,
     temperature,
     tint,
 )
@@ -55,6 +59,26 @@ class EffectPipeline:
         frame = gamma(
             frame,
             self.settings.gamma,
+        )
+
+        frame = skin_smoothing(
+            frame,
+            self.settings.skin_smoothing,
+        )
+
+        frame = blur(
+            frame,
+            self.settings.blur,
+        )
+
+        frame = clarity(
+            frame,
+            self.settings.clarity,
+        )
+
+        frame = sharpness(
+            frame,
+            self.settings.sharpness,
         )
 
         return frame

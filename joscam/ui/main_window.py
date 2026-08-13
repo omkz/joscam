@@ -119,6 +119,9 @@ class MainWindow(QMainWindow):
         tabs.addTab(
             self.create_color_tab(), "Color"
         )
+        tabs.addTab(
+            self.create_detail_tab(), "Detail"
+        )
 
         return tabs
 
@@ -224,6 +227,52 @@ class MainWindow(QMainWindow):
                 label="Tint",
                 minimum=-30,
                 maximum=30,
+                scale=100,
+            )
+        )
+
+        return container
+
+    def create_detail_tab(self):
+        container = QWidget()
+        layout = QVBoxLayout(container)
+
+        layout.addWidget(
+            self.create_slider(
+                key="skin_smoothing",
+                label="Skin Smoothing",
+                minimum=0,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="blur",
+                label="Blur",
+                minimum=0,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="clarity",
+                label="Clarity",
+                minimum=-50,
+                maximum=50,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
+                key="sharpness",
+                label="Sharpness",
+                minimum=0,
+                maximum=50,
                 scale=100,
             )
         )

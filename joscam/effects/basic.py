@@ -128,3 +128,74 @@ def highlights_shadows(
         0,
         255,
     ).astype(np.uint8)
+
+
+def blur(frame, value: float):
+    if value <= 0:
+        return frame
+
+    sigma = value * 10.0
+
+    return cv2.GaussianBlur(
+        frame,
+        (0, 0),
+        sigmaX=sigma,
+    )
+
+
+def skin_smoothing(frame, value: float):
+    if value <= 0:
+        return frame
+
+    smoothed = cv2.bilateralFilter(
+        frame,
+        d=9,
+        sigmaColor=75,
+        sigmaSpace=75,
+    )
+
+    return cv2.addWeighted(
+        smoothed,
+        value,
+        frame,
+        1 - value,
+        0,
+    )
+
+
+def clarity(frame, value: float):
+    if value == 0:
+        return frame
+
+    blurred = cv2.GaussianBlur(
+        frame,
+        (0, 0),
+        sigmaX=20,
+    )
+
+    return cv2.addWeighted(
+        frame,
+        1 + value,
+        blurred,
+        -value,
+        0,
+    )
+
+
+def sharpness(frame, value: float):
+    if value <= 0:
+        return frame
+
+    blurred = cv2.GaussianBlur(
+        frame,
+        (0, 0),
+        sigmaX=3,
+    )
+
+    return cv2.addWeighted(
+        frame,
+        1 + value,
+        blurred,
+        -value,
+        0,
+    )
