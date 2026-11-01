@@ -16,6 +16,7 @@ class CameraSettings:
 
     blur: float = 0.0
     skin_smoothing: float = 0.0
+    face_light: float = 0.0
     clarity: float = 0.0
     sharpness: float = 0.0
 

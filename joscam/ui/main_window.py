@@ -275,8 +275,18 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(
             self.create_slider(
+                key="face_light",
+                label="Face Light",
+                minimum=0,
+                maximum=100,
+                scale=100,
+            )
+        )
+
+        layout.addWidget(
+            self.create_slider(
                 key="skin_smoothing",
-                label="Skin Smoothing",
+                label="Face Skin Smoothing",
                 minimum=0,
                 maximum=100,
                 scale=100,

@@ -1,3 +1,4 @@
+from joscam.effects.beauty import FaceBeauty
 from joscam.effects.basic import (
     blur,
     brightness,
@@ -10,7 +11,6 @@ from joscam.effects.basic import (
     highlights_shadows,
     saturation,
     sharpness,
-    skin_smoothing,
     temperature,
     tint,
     vignette,
@@ -23,6 +23,7 @@ from joscam.settings import CameraSettings
 class EffectPipeline:
     def __init__(self, settings: CameraSettings):
         self.settings = settings
+        self.beauty = FaceBeauty()
 
         # Filter/look layer. Kept separate from CameraSettings:
         # it is a look applied on top of a preset, not part of it.
@@ -76,9 +77,10 @@ class EffectPipeline:
             self.settings.gamma,
         )
 
-        frame = skin_smoothing(
+        frame = self.beauty.process(
             frame,
             self.settings.skin_smoothing,
+            self.settings.face_light,
         )
 
         frame = blur(

@@ -192,3 +192,24 @@ Current focus:
 * configurable presets
 * social and cinematic filters
 * customizable frame styles
+
+## Face Beauty
+
+Select the **Beauty** preset, or adjust **Face Skin Smoothing** and **Face Light**
+in the Detail tab. These effects run locally and use OpenCV's bundled frontal
+face detector; no cloud API, API key, or separate model download is needed.
+Smoothing is confined to a feathered face region with approximate eye and mouth
+exclusions and detail protection. No detected face means no beauty adjustment.
+Neutral remains unmodified. Existing Blur and Clarity controls still affect the
+whole frame, so leave them at zero when evaluating face beauty.
+
+This first version is cosmetic retouching, not age transformation or landmark
+tracking. Profile faces, occlusion, false detections, and changes in the detected
+face box may produce imperfect masks or flicker. Facial hair preservation is
+heuristic. Validate on your own webcam and lighting before relying on it.
+
+Processing checks (no webcam required):
+
+```bash
+uv run python -m unittest discover -s tests -v
+```
