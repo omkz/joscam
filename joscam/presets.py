@@ -144,6 +144,11 @@ PRESETS = {
         grain=0.00,
     ),
 
+    "Beauty": CameraSettings(
+        skin_smoothing=0.65,
+        face_light=0.40,
+    ),
+
     "Youth": CameraSettings(
         brightness=4,
         exposure=0.10,
